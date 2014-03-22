@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Clip name="SerializeTest" sampleRate="8000" length="0.4" stereo="false" is3D="false" >
+	<Wave shape="Triangle" frequency="880" gain="0.35" >
+		<Key time="0.25" frequency="880" gain="0.35" />
+		<Key time="0.255" frequency="1200" gain="0.35" />
+		<Key time="1.0"  frequency="1200" gain="0.0" />
+	</Wave>
+</Clip>
