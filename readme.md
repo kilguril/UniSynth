@@ -1,1 +1,4 @@
-PLACEHOLDER README 
+UniSynth
+========
+
+Unity Sound Synthesizer
