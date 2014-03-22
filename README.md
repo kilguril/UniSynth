@@ -1,4 +1,0 @@
-UniSynth
-========
-
-Unity Sound Synthesizer
