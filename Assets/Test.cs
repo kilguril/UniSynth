@@ -7,13 +7,17 @@ using UniSynth;
 public class Test : MonoBehaviour 
 {
 	private const string SAMPLE_PATH = "/Samples/";
+	
+	private SoundClip sound;
+	private float	  chain = 0.0f;
 
 	// Use this for initialization
 	void Start () 
 	{
 		gameObject.AddComponent< AudioSource >();
 		
-		audio.clip = LoadFromXML("SerializeTest.xml").Clip;
+		sound = LoadFromXML("SerializeTest.xml");
+		audio.clip = sound.Clip;
 	}
 	
 	// Update is called once per frame
@@ -22,6 +26,18 @@ public class Test : MonoBehaviour
 		if ( Input.GetKeyDown( KeyCode.X ) ) 
 		{
 			audio.Play();
+		}
+		
+		if ( Input.GetKeyDown( KeyCode.Z ) )
+		{
+			chain++;
+			
+			if ( chain > 10.0f )
+			{
+				chain = 0.0f;
+			}
+			
+			sound.SetData( "Chain", chain );
 		}
 	}
 	

@@ -32,12 +32,32 @@ namespace UniSynth
 			bool			   clip3D				= ParseBool( clipNode, "is3D", DEFAULT_CLIP_3D );
 			List< ISoundPass > clipSoundPasses		= new List< ISoundPass >();
 			
+			Dictionary< string, ObservableProperty< float > > paramList	= new Dictionary< string, ObservableProperty< float > >();
+			
+			foreach( XmlNode paramNode in clipNode.SelectNodes( "Param" ) )
+			{
+				string paramName = "";
+				float  paramVal	 = 0.0f;
+				
+				if ( !TryParseString( paramNode, "name", out paramName ) )
+				{
+					continue;
+				}
+				
+				if ( !TryParseFloat( paramNode, "value", out paramVal ) )
+				{
+					continue;
+				}
+				
+				paramList.Add( paramName, new ObservableProperty< float >( paramVal ) );
+			}
+						
 			foreach( XmlNode waveNode in clipNode.SelectNodes("Wave") )
 			{
-				clipSoundPasses.Add( ParseWave( waveNode, clipSampleRate, Mathf.FloorToInt( clipSampleRate * clipLength ) ) );
+				clipSoundPasses.Add( ParseWave( waveNode, clipSampleRate, Mathf.FloorToInt( clipSampleRate * clipLength ), paramList ) );
 			}
 		
-			return new SoundClip( clipName, clipLength, clipSampleRate, clipStereo, clip3D, clipSoundPasses.ToArray() );
+			return new SoundClip( clipName, clipLength, clipSampleRate, clipStereo, clip3D, clipSoundPasses.ToArray(), paramList );
 		}
 		
 		// Serialize to XML
@@ -46,7 +66,7 @@ namespace UniSynth
 			throw new NotImplementedException();
 		}
 		
-		private static PassWave ParseWave( XmlNode node, int sampleRate, int sampleLength )
+		private static PassWave ParseWave( XmlNode node, int sampleRate, int sampleLength, Dictionary< string, ObservableProperty< float > > paramList )
 		{
 			XmlNodeList	keyframeNodes = node.SelectNodes( "Key" );
 			WaveKeyframe[] keyframes = new WaveKeyframe[ keyframeNodes.Count + 1 ];
@@ -56,6 +76,43 @@ namespace UniSynth
 			for ( int i = 0; i < keyframeNodes.Count; i++ )
 			{
 				keyframes[ i + 1 ] = ParseWaveKeyframe( keyframeNodes[ i ] );
+			}
+			
+			// Parse bindings
+			XmlNodeList bindingNodes = node.SelectNodes( "Bind" );
+			
+			foreach( XmlNode bindingNode in bindingNodes )
+			{
+				int 	targetKey;
+				string  sourceKey;
+				
+				if ( !TryParseString( bindingNode, "source", out sourceKey ) )
+				{
+					continue;
+				}
+				
+				if ( !paramList.ContainsKey( sourceKey ) )
+				{
+					continue;
+				}
+				
+				if ( !TryParseInt( bindingNode, "target", out targetKey ) )
+				{
+					continue;
+				}
+			
+				// Parse binding
+				WaveKeyframeDataBinding binding = ParseWaveKeyframeDataBinding( bindingNode );
+				
+				if ( binding == null )
+				{
+					continue;
+				}
+				
+				binding.SetSource( paramList[ sourceKey ] );
+				binding.SetTarget( keyframes[ targetKey ] );
+
+				keyframes[ targetKey ].AddDataBinding( binding );
 			}
 			
 			return new PassWave( sampleLength, sampleRate, ParseWaveShape( node ), keyframes );
@@ -70,6 +127,68 @@ namespace UniSynth
 			gain 	  = ParseFloat( node, "gain", DEFAULT_KEYFRAME_GAIN );
 						
 			return new WaveKeyframe( time, frequency, gain );
+		}
+		
+		private static WaveKeyframeDataBinding ParseWaveKeyframeDataBinding( XmlNode node )
+		{
+			// <Bind source="pChain" target="0" property="frequency" method="range" rangeSource="0,10" rangeTarget="880,1200" />	
+			try
+			{
+				WaveKeyframeDataBinding.BoundProperty boundProperty;
+				DataBinding.BindingMode   bindingMode;
+			
+				switch( node.Attributes[ "property"].InnerText )
+				{
+					case "time":
+						boundProperty = WaveKeyframeDataBinding.BoundProperty.TIME;
+						break;
+						
+					case "frequency":
+						boundProperty = WaveKeyframeDataBinding.BoundProperty.FREQUENCY;
+						break;
+						
+					case "gain":
+						boundProperty = WaveKeyframeDataBinding.BoundProperty.GAIN;
+						break;
+						
+					default:
+						return null;
+				}
+				
+				switch( node.Attributes[ "method" ].InnerText )
+				{
+					case "range":
+						bindingMode = DataBinding.BindingMode.MAP_RANGE;
+						break;
+						
+					case "value":
+						bindingMode = DataBinding.BindingMode.VALUE;
+						break;
+					
+					default:
+						return null;
+				}
+				
+				float sourceFrom = 0.0f;
+				float sourceTo	 = 0.0f;
+				
+				float targetFrom = 0.0f;
+				float targetTo	 = 0.0f;
+				
+				TryParseFloatRange( node, "rangeSource", out sourceFrom, out sourceTo );
+				
+				if ( bindingMode == WaveKeyframeDataBinding.BindingMode.MAP_RANGE )
+				{
+					TryParseFloatRange( node, "rangeTarget", out targetFrom, out targetTo );
+				}
+			
+				return new WaveKeyframeDataBinding( boundProperty, bindingMode, sourceFrom, sourceTo, targetFrom, targetTo );
+			}
+			catch
+			{
+				// This WHOLE thing needs to be refactored... for the time being return null on error
+				return null;
+			}
 		}
 		
 		private static WaveShapes.WaveGenerator ParseWaveShape( XmlNode node )
@@ -108,6 +227,21 @@ namespace UniSynth
 			}
 		}
 		
+		private static bool TryParseString ( XmlNode node, string attributeName, out string result )
+		{
+			result = "";
+		
+			try 
+			{
+				result = node.Attributes[ attributeName ].InnerText;
+				return true;
+			}
+			catch
+			{
+				return false;
+			}
+		}
+		
 		private static string ParseString( XmlNode node, string attributeName, string defaultValue )
 		{
 			try
@@ -120,6 +254,21 @@ namespace UniSynth
 			}
 		}
 		
+		private static bool TryParseFloat( XmlNode node, string attributeName, out float result )
+		{
+			result = 0.0f;
+		
+			try 
+			{
+				result = float.Parse( node.Attributes[ attributeName ].InnerXml );
+				return true;
+			}
+			catch
+			{
+				return false;
+			}
+		}
+		
 		private static float ParseFloat( XmlNode node, string attributeName, float defaultValue )
 		{
 			try
@@ -129,6 +278,49 @@ namespace UniSynth
 			catch
 			{
 				return defaultValue;
+			}
+		}
+		
+		private static bool TryParseFloatRange( XmlNode node, string attributeName, out float from, out float to )
+		{
+			from = 0.0f;
+			to 	 = 0.0f;
+		
+			try 
+			{
+				string[] splitVals = node.Attributes[ attributeName ].InnerText.Split(',');
+				
+				from = float.Parse( splitVals[ 0 ] );
+				
+				if ( splitVals.Length < 2 )
+				{
+					to = from;
+				}
+				else
+				{
+					to = float.Parse( splitVals[ 1 ] );
+				}
+				
+				return true;
+			}
+			catch
+			{
+				return false;
+			}
+		}
+		
+		private static bool TryParseInt( XmlNode node, string attributeName, out int result )
+		{
+			result = 0;
+			
+			try 
+			{
+				result = int.Parse( node.Attributes[ attributeName ].InnerXml );
+				return true;
+			}
+			catch
+			{
+				return false;
 			}
 		}
 		

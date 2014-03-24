@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace UniSynth
 {
@@ -10,6 +11,9 @@ namespace UniSynth
 		{
 			get { return m_clip; }
 		}
+		
+		// Maps exposed parameter 
+		private Dictionary< string, ObservableProperty< float > > m_paramList;
 	
 		private AudioClip 	 m_clip;				// Underlying unity AudioClip object
 		private int		  	 m_index;				// Index to the last set position
@@ -22,7 +26,7 @@ namespace UniSynth
 		
 		private ISoundPass[] m_passes;				// All passes used to create the effect, executed in order
 	
-		public SoundClip( string clipName, float length, int sampleRate, bool stereo, bool is3D, ISoundPass[] soundPasses )
+		public SoundClip( string clipName, float length, int sampleRate, bool stereo, bool is3D, ISoundPass[] soundPasses, Dictionary< string, ObservableProperty< float > > paramList )
 		{
 			m_clipName 		= clipName;
 			m_lengthSamples = Mathf.FloorToInt( length * sampleRate );
@@ -32,6 +36,8 @@ namespace UniSynth
 		
 			m_passes = soundPasses;
 			
+			m_paramList = paramList;
+
 			m_clip = AudioClip.Create(
 				m_clipName,
 				m_lengthSamples,
@@ -42,6 +48,16 @@ namespace UniSynth
 				OnDataRead,
 				OnPositionSet
 			);		
+		}
+		
+		public void SetData( string key, float val )
+		{
+			m_paramList[ key ].Value = val;
+		}
+		
+		public float GetData( string key )
+		{
+			return m_paramList[ key ].Value;
 		}
 		
 		private void OnDataRead( float[] data )

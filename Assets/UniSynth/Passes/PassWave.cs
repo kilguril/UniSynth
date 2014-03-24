@@ -1,19 +1,29 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace UniSynth
 {
-	public struct WaveKeyframe
+	public class WaveKeyframe
 	{
 		public float m_time;
 		public float m_frequency;
 		public float m_gain;
+		
+		private List< WaveKeyframeDataBinding > m_dataBindings;
 		
 		public WaveKeyframe( float time, float frequency, float gain )
 		{
 			m_time 		= time;
 			m_frequency = frequency;
 			m_gain 		= gain;
+			
+			m_dataBindings = new List< WaveKeyframeDataBinding >();
+		}
+		
+		public void AddDataBinding( WaveKeyframeDataBinding binding )
+		{	
+			m_dataBindings.Add( binding );
 		}
 	}
 

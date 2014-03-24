@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Clip name="SerializeTest" sampleRate="8000" length="0.4" stereo="false" is3D="false" >
+<Clip name="SerializeTest" sampleRate="44100" length="0.4" stereo="false" is3D="false" >
+	<Param name="Chain" value="0" />
+	
 	<Wave shape="Triangle" frequency="880" gain="0.35" >
 		<Key time="0.25" frequency="880" gain="0.35" />
 		<Key time="0.255" frequency="1200" gain="0.35" />
 		<Key time="1.0"  frequency="1200" gain="0.0" />
+		
+		<!-- Binding parameter to specific keyframe property -->
+		<Bind source="Chain" target="0" property="frequency" method="range" rangeSource="0,10" rangeTarget="880,1280" />
+		<Bind source="Chain" target="1" property="frequency" method="range" rangeSource="0,10" rangeTarget="880,1280" />
+		<Bind source="Chain" target="2" property="frequency" method="range" rangeSource="0,10" rangeTarget="1200,1600" />
+		<Bind source="Chain" target="3" property="frequency" method="range" rangeSource="0,10" rangeTarget="1200,1600" />
 	</Wave>
+	
 </Clip>
