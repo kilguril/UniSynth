@@ -1,47 +1,20 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
-namespace UniSynth2
+namespace UniSynth
 {
 	public class SoundClip
 	{
-		// Gets the underlying AudioClip object to be played
+		// Returns the underlying AudioClip object to be played
 		public AudioClip  Clip
 		{
 			get { return m_clip; }
 		}
 		
-		public string Name
-		{
-			get { return m_clipName;  }
-		}
-		
-		public int SampleLength
-		{
-			get { return m_lengthSamples; }			
-		}
-		
-		public int SampleRate
-		{
-			get { return m_sampleRate; }
-		}
-		
-		public bool IsStereo
-		{
-			get { return ( m_channels > 1 ); }
-		}
-		
-		public bool Is3D
-		{
-			get { return m_3D; }
-		}
-		
-		// Gets the output / root node of the process
-		public ISynthGraphNode Root
-		{
-			get { return m_outputNode; }
-		}
-		
+		// Maps exposed parameter 
+		private Dictionary< string, ObservableProperty< float > > m_paramList;
+	
 		private AudioClip 	 m_clip;				// Underlying unity AudioClip object
 		private int		  	 m_index;				// Index to the last set position
 		
@@ -51,18 +24,20 @@ namespace UniSynth2
 		private int		  	 m_channels;			// Clip number of channels ( 1 - mono, 2 - stereo )
 		private bool	  	 m_3D;					// Is sound 3D
 		
-		ISynthGraphNode		 m_outputNode;			// Data output node ( process will propegate upwards )
-		
-		public SoundClip( string clipName, float length, int sampleRate, bool stereo, bool is3D )
+		private ISoundPass[] m_passes;				// All passes used to create the effect, executed in order
+	
+		public SoundClip( string clipName, float length, int sampleRate, bool stereo, bool is3D, ISoundPass[] soundPasses, Dictionary< string, ObservableProperty< float > > paramList )
 		{
-			// Set parameters
 			m_clipName 		= clipName;
 			m_lengthSamples = Mathf.FloorToInt( length * sampleRate );
 			m_channels		= ( stereo ? 2 : 1 );
 			m_sampleRate	= sampleRate;
 			m_3D			= is3D;
+		
+			m_passes = soundPasses;
 			
-			// Create audioclip
+			m_paramList = paramList;
+
 			m_clip = AudioClip.Create(
 				m_clipName,
 				m_lengthSamples,
@@ -73,31 +48,29 @@ namespace UniSynth2
 				OnDataRead,
 				OnPositionSet
 			);		
-			
-			// Initialize root node based on output type ( mono / stereo )
-			if ( m_channels > 1 )
-			{
-				
-			}
-			else
-			{
-				m_outputNode = new SynthNodeOutputMono();
-			}
+		}
+		
+		public void SetData( string key, float val )
+		{
+			m_paramList[ key ].Value = val;
+		}
+		
+		public float GetData( string key )
+		{
+			return m_paramList[ key ].Value;
 		}
 		
 		private void OnDataRead( float[] data )
 		{
-			if ( ( m_clip == null ) || ( Root == null ) )
-			{
-				return;
-			}
-		
 			for ( int i = 0; i < data.Length; i++ )
 			{
 				data[ i ] = 0.0f;
 			}
-			
-			m_outputNode.Process( data );
+		
+			for ( int i = 0; i < m_passes.Length; i++ )
+			{
+				m_passes[ i ].Pass( data, m_index );
+			}
 			
 			m_index += data.Length;
 		}
