@@ -75,6 +75,23 @@ namespace UniSynth2.Editor.Windows
 			}			
 		}
 		
+		public bool RequiresContiniousUpdates ()
+		{
+			bool result = false;
+			
+			if ( Left != null )
+			{
+				result = result || Left.RequiresContiniousUpdates();
+			}
+			
+			if ( Right != null )
+			{
+				result = result || Right.RequiresContiniousUpdates();
+			}
+			
+			return result;
+		}
+		
 		protected void ProcessEvents()
 		{
 			Event e = Event.current;

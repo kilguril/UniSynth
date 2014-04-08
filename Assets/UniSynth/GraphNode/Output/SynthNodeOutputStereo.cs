@@ -3,24 +3,22 @@ using System.Collections;
 
 namespace UniSynth2
 {
-	public class SynthNodeOutputMono : SynthGraphNodeBase 
+	public class SynthNodeOutputStereo : SynthGraphNodeBase 
 	{
-		public SynthNodeOutputMono()
+		public SynthNodeOutputStereo()
 		{
-			m_sourceNodes = new ISynthGraphNode[1];
+			m_sourceNodes = new ISynthGraphNode[2];
 		}
 		
 		public override void Process (float[] data, SoundClipState state)
 		{
+			// IMPLEMENT ME
 			for ( int i = 0; i < data.Length; i++ )
 			{
 				data[ i ] = 0;
 			}
 			
-			if ( m_sourceNodes[ 0 ] != null )
-			{
-				m_sourceNodes[ 0 ].Process( data, state );
-			}
+			m_sourceNodes[ 0 ].Process( data, state );
 		}
 	}
 }

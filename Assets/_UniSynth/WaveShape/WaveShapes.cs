@@ -20,7 +20,7 @@ namespace UniSynth
 			SAW
 		}
 		
-		// Uniform signature for all wave generating methods. ( t = normalized time -1.0 -> 1.0 within a single phase )
+		// Uniform signature for all wave generating methods. ( t = normalized time 0.0 -> 1.0 within a single phase )
 		public delegate float WaveGenerator( float t );
 		
 		// Sine wave computed using Mathf.Sin

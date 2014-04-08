@@ -51,7 +51,9 @@ namespace UniSynth2
 		private int		  	 m_channels;			// Clip number of channels ( 1 - mono, 2 - stereo )
 		private bool	  	 m_3D;					// Is sound 3D
 		
-		ISynthGraphNode		 m_outputNode;			// Data output node ( process will propegate upwards )
+		ISynthGraphNode		 m_outputNode;			// Data output node ( process will propagate upwards )
+		
+		private SoundClipState m_clipState;
 		
 		public SoundClip( string clipName, float length, int sampleRate, bool stereo, bool is3D )
 		{
@@ -74,10 +76,15 @@ namespace UniSynth2
 				OnPositionSet
 			);		
 			
+			m_clipState = new SoundClipState();
+			m_clipState.m_index = 0;
+			m_clipState.m_sampleLength = m_lengthSamples;
+			m_clipState.m_sampleRate   = m_sampleRate;
+			
 			// Initialize root node based on output type ( mono / stereo )
 			if ( m_channels > 1 )
 			{
-				
+				m_outputNode = new SynthNodeOutputStereo();
 			}
 			else
 			{
@@ -87,18 +94,14 @@ namespace UniSynth2
 		
 		private void OnDataRead( float[] data )
 		{
-			if ( ( m_clip == null ) || ( Root == null ) )
+			if ( ( Object.ReferenceEquals( m_clip, null ) ) || ( Object.ReferenceEquals( m_outputNode, null ) ) )
 			{
 				return;
 			}
 		
-			for ( int i = 0; i < data.Length; i++ )
-			{
-				data[ i ] = 0.0f;
-			}
-			
-			m_outputNode.Process( data );
-			
+			m_clipState.m_index = m_index;
+			m_outputNode.Process( data, m_clipState );
+		
 			m_index += data.Length;
 		}
 		

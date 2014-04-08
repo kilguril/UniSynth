@@ -38,11 +38,11 @@ namespace UniSynth2
 			m_sourceNodes[ index ] = node;
 		}
 
-		public virtual void Process (float[] data)
+		public virtual void Process (float[] data, SoundClipState state)
 		{
 			for( int i = 0; i < m_sourceNodes.Length; i++ )
 			{
-				m_sourceNodes[ i ].Process( data );
+				m_sourceNodes[ i ].Process( data, state );
 			}
 		}	
 	}

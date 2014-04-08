@@ -13,11 +13,15 @@ namespace UniSynth2.Editor.Windows
 	
 		public enum ToolReturnValue : int
 		{			
-			ADD_WAVE_NODE
+			ADD_WAVE_NODE,
+			ADD_CONSTANT_NODE,
+			ADD_OPERATION_NODE
 		}
 	
 		private GUIButtonValue[] m_controls = new GUIButtonValue[]{
 			new GUIButtonValue( "Wave Node", (int)ToolReturnValue.ADD_WAVE_NODE ),
+			new GUIButtonValue( "Constant Node", (int)ToolReturnValue.ADD_CONSTANT_NODE ),
+			new GUIButtonValue( "Operation Node", (int)ToolReturnValue.ADD_OPERATION_NODE ),
 		};
 		
 		public SynthGraphEditorToolboxWindow( int windowId, string windowTitle, Rect windowRect ) : base( windowId, windowTitle, windowRect )

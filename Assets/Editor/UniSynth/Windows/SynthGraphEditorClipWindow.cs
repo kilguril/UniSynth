@@ -8,6 +8,9 @@ namespace UniSynth2.Editor.Windows
 {
 	public class SynthGraphEditorClipWindow : SynthGraphEditorWindow
 	{	
+		public delegate void PlaybackRequested();
+		public event PlaybackRequested OnPlaybackRequested;
+	
 		public enum OptionReturnValue : int
 		{			
 			NEW_CLIP,
@@ -15,10 +18,12 @@ namespace UniSynth2.Editor.Windows
 			SAVE_GRAPH,
 			EXPORT_WAV,
 			APPLY_CLIP_CHANGES,
-			REVERT_CLIP_CHANGES
+			REVERT_CLIP_CHANGES,
+			PLAY_PREVIEW
 		}
 		
 		private GUIButtonValue[] m_controls = new GUIButtonValue[]{
+			new GUIButtonValue( "Play Clip", (int)OptionReturnValue.PLAY_PREVIEW ),
 			new GUIButtonValue( "New SoundClip", (int)OptionReturnValue.NEW_CLIP ),
 			new GUIButtonValue( "Load Graph", (int)OptionReturnValue.LOAD_GRAPH ),
 			new GUIButtonValue( "Save Graph", (int)OptionReturnValue.SAVE_GRAPH ),
@@ -45,11 +50,14 @@ namespace UniSynth2.Editor.Windows
 		protected override void Window (int windowId)
 		{
 			SoundClip clip = SynthGraphEditorState.ActiveClip;
-			int clipval = -1;
+			int clipval = SynthGraphEditorFactory.BUTTON_GROUP_NO_INPUT;
 			
 			if ( clip != null )
 			{
 				EditorGUILayout.BeginVertical();
+				
+				EditorGUILayout.LabelField( SynthGraphEditor.GetFullProductName() );
+				EditorGUILayout.Space();
 				
 				EditorGUILayout.LabelField( "Clip Name:" );
 				m_clipName = EditorGUILayout.TextField( m_clipName );
@@ -65,24 +73,37 @@ namespace UniSynth2.Editor.Windows
 				m_isStereo = EditorGUILayout.ToggleLeft( "Stereo", m_isStereo );
 				m_is3D = EditorGUILayout.ToggleLeft( "3D Sound", m_is3D );
 				
-				EditorGUILayout.Separator();			
+				EditorGUILayout.Separator();							
+				EditorGUILayout.EndVertical();
 				
 				clipval = SynthGraphEditorFactory.ButtonList( m_clipControls );
 				
-				EditorGUILayout.Separator();			
-				EditorGUILayout.Separator();
-				
+				EditorGUILayout.BeginVertical();
+				EditorGUILayout.Space();
+				EditorGUILayout.Space();
 				EditorGUILayout.EndVertical();
 			}
 			
 			int rval = SynthGraphEditorFactory.ButtonList( m_controls );
 			
-			if ( clipval >= 0 )
+			if ( clipval == SynthGraphEditorFactory.BUTTON_GROUP_NO_INPUT )
+			{
+				clipval = rval;
+			}
+			
+			if ( clipval > SynthGraphEditorFactory.BUTTON_GROUP_NO_INPUT )
 			{
 				switch( (OptionReturnValue)clipval )
 				{
 					case OptionReturnValue.REVERT_CLIP_CHANGES:
 						RevertClipSettings();
+					break;
+					
+					case OptionReturnValue.PLAY_PREVIEW:
+						if ( OnPlaybackRequested != null )
+						{
+							OnPlaybackRequested();
+						}
 					break;
 				}
 			}

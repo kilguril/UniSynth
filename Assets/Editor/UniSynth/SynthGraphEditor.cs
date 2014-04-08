@@ -10,6 +10,30 @@ namespace UniSynth2.Editor
 {
 	public class SynthGraphEditor : EditorWindow 
 	{	
+		#region Product information
+		public const string		PRODUCT_TITLE		= "UniSynth Editor";
+		public const int		VERSION_MAJOR	    = 0;
+		public const int		VERSION_MINOR		= 0;
+		public const int		VERSION_REVISION	= 1;
+		
+		public static string GetVersionString()
+		{
+			return string.Format( "{0}.{1}.{2}", VERSION_MAJOR, VERSION_MINOR, VERSION_REVISION );
+		}
+		
+		public static string GetProductName()
+		{
+			return "UniSynth Editor";
+		}
+		
+		public static string GetFullProductName()
+		{
+			return string.Format( "{0} - {1}", GetProductName(), GetVersionString() );
+		}
+		
+		
+		#endregion
+	
 		// New clip default values
 		public const string		DEFAULT_CLIP_NAME	= "Unnamed Clip";
 		public const float		DEFAULT_CLIP_LENGTH = 1.0f;
@@ -30,6 +54,9 @@ namespace UniSynth2.Editor
 		// Editor window cached rect to detect screen changes
 		private Rect m_editorWindowRect;
 		
+		// Playback control
+		private SynthPlayback m_playback;
+		
 		public SynthGraphEditor()
 		{
 			m_editorWindowRect.x = 0.0f;
@@ -37,11 +64,26 @@ namespace UniSynth2.Editor
 			m_editorWindowRect.width = position.width;
 			m_editorWindowRect.height = position.height;
 			
-			title = "UniSynth Editor";
+			title = GetProductName();
+			
+			m_playback = new SynthPlayback();
 			
 			CreateWindows();
 			BuildConvultedViewHierarchy();
 			RegisterEvents();
+		}
+		
+		private void Update()
+		{		
+			m_playback.Update();
+			
+			if ( m_view != null )
+			{
+				if ( GetViewHierarchyRequiresUpdate( m_view ) )
+				{
+					Repaint();
+				}
+			}
 		}
 		
 		private void OnGUI()
@@ -136,18 +178,36 @@ namespace UniSynth2.Editor
 			return default(T);
 		}
 		
+		private bool GetViewHierarchyRequiresUpdate( ISynthGraphEditorView node )
+		{
+			return m_view.RequiresContiniousUpdates();
+		}
+		
 		private void RegisterEvents()
 		{
 			m_toolboxWindow.OnToolSelected += HandleToolSelected;
-			
+			m_clipWindow.OnPlaybackRequested += HandlePlaybackRequested;
+		}
+		
+		private void HandlePlaybackRequested()
+		{
+			m_playback.PlayClip( SynthGraphEditorState.ActiveClip );
 		}
 
-		void HandleToolSelected (SynthGraphEditorToolboxWindow.ToolReturnValue tool)
+		private void HandleToolSelected (SynthGraphEditorToolboxWindow.ToolReturnValue tool)
 		{
 			switch( tool )
 			{
 				case SynthGraphEditorToolboxWindow.ToolReturnValue.ADD_WAVE_NODE:
-					m_graphWindow.AddNode( new SynthNodeOutputMono() );
+					m_graphWindow.AddNode( new SynthNodeGeneratorWave() );
+				break;
+				
+				case SynthGraphEditorToolboxWindow.ToolReturnValue.ADD_CONSTANT_NODE:
+					m_graphWindow.AddNode( new SynthNodeConstant() );
+				break;
+				
+				case SynthGraphEditorToolboxWindow.ToolReturnValue.ADD_OPERATION_NODE:
+					m_graphWindow.AddNode( new SynthNodeOperation() );
 				break;
 			}
 		}

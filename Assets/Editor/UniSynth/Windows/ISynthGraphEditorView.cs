@@ -9,5 +9,7 @@ namespace UniSynth2.Editor.Windows
 		
 		Rect GetRect();
 		void SetRect( Rect rect );
+		
+		bool RequiresContiniousUpdates();
 	}
 }

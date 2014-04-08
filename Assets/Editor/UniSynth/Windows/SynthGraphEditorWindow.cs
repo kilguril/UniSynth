@@ -9,6 +9,8 @@ namespace UniSynth2.Editor.Windows
 		protected Rect 		m_windowRect;
 		protected string 	m_windowTitle;
 		
+		protected bool		m_requiresContiniousUpdate = false;
+		
 		public SynthGraphEditorWindow( int windowId, string windowTitle, Rect windowRect )
 		{
 			m_windowId    = windowId;
@@ -43,6 +45,16 @@ namespace UniSynth2.Editor.Windows
        		ProcessEvents();
 		}
 		
+		public bool RequiresContiniousUpdates ()
+		{
+			return m_requiresContiniousUpdate;
+		}
+		
+		protected void SetRequiresContiniousUpdates( bool status )
+		{
+			m_requiresContiniousUpdate = status;
+		}
+		
 		protected virtual void Window( int windowId )
 		{
 		
@@ -52,6 +64,13 @@ namespace UniSynth2.Editor.Windows
 		{
 			
 		}
+		
+		protected void Log( string s )
+		{
+			Debug.Log ( string.Format("[{0:00.00}][{1}] {2}", Time.realtimeSinceStartup, this, s ) );
+		}
+		
+		
 	
 	}
 }

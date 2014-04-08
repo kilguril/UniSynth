@@ -3,11 +3,31 @@ using UnityEngine;
 using System.Collections;
 
 using UniSynth2;
+using UniSynth2.Editor.Windows;
 
 namespace UniSynth2.Editor
 {
 	public class NodeGUIBase
 	{	
+		public enum NodeConnectorType
+		{
+			DATA_IN,
+			DATA_OUT,
+			BINDING_IN,
+			BINDING_OUT
+		}
+		
+		public ISynthGraphNode DataNode
+		{
+			get { return m_dataNode; }
+		}
+		
+		public delegate void NodeSelected( NodeGUIBase node );
+		public static event NodeSelected OnNodeSelected;
+		
+		public delegate void NodeConnectorSelected( NodeGUIBase node, int connectorIndex, NodeConnectorType connectorType );
+		public static event NodeConnectorSelected OnNodeConnectorSelected;
+	
 		protected GUIStyle		m_style;
 	
 		private bool			m_isDragged;
@@ -26,9 +46,59 @@ namespace UniSynth2.Editor
 			SetRect( GetDefaultRect() );
 		}
 		
+		// Validate connection / prevent loopbacks		
+		// If valid, apply
+		// Return result
+		public bool AddConnection( SynthGraphEditorGraphConnection connection )
+		{
+			if ( ValidateConnection( connection ) )
+			{
+				DataNode.SetSourceNode( connection.m_from.DataNode, connection.m_toSlot );
+				return true;
+			}
+		
+			return false;
+		}
+		
+		private bool ValidateConnection( SynthGraphEditorGraphConnection connection )
+		{
+			if ( connection.m_from.DataNode == DataNode )
+			{
+				return false;	// Loopback
+			}
+			
+			if ( connection.m_toSlot >= DataNode.GetSourceCount() )
+			{
+				return false;	// Out of input range
+			}
+			
+			return true;
+		}
+		
+		public Vector2 GetInputHandle( int index )
+		{
+			Vector2 output;			
+			float slotSize = ( m_rect.width / m_dataNode.GetSourceCount() );
+			
+			output.x = m_rect.x + ( slotSize * index ) + ( slotSize / 2.0f );
+			output.y = m_rect.y - ( SynthGraphEditorFactory.SPLIT_VIEW_HANDLE_SIZE / 2.0f );
+			
+			return output;
+		}
+		
+		public Vector2 GetOutputHandle()
+		{
+			Vector2 output;
+			
+			output.x = m_rect.x + ( m_rect.width / 2.0f );
+			output.y = m_rect.y + m_rect.height + ( SynthGraphEditorFactory.SPLIT_VIEW_HANDLE_SIZE / 2.0f );
+			
+			return output;
+		}
+		
 		public virtual Rect GetDefaultRect()
 		{
-			return new Rect( 0.0f, 0.0f, SynthGraphEditorFactory.NODE_WIDTH, SynthGraphEditorFactory.NODE_LINE_HEIGHT);
+			return new Rect( 0.0f, 0.0f, SynthGraphEditorFactory.NODE_WIDTH, SynthGraphEditorFactory.NODE_HEADER_HEIGHT);
 		}
 		
 		public virtual string GetTitle()
@@ -52,30 +122,94 @@ namespace UniSynth2.Editor
 		public void Draw()
 		{	
 			GUI.Box( m_rect, "" );
-			GUILayout.BeginArea( m_rect );
 			
-			GUILayout.BeginHorizontal();
-			GUILayout.FlexibleSpace();
-			GUILayout.Label( GetTitle() );
-			GUILayout.FlexibleSpace();
-			GUILayout.EndHorizontal();
+			Rect headerRect = m_rect;
+			headerRect.y += 3.0f;
 			
+			SynthGraphEditorFactory.HorizontalCenteredLabel( headerRect, GetTitle() );
+			
+			Rect contentRect 	= m_rect;
+			contentRect.y 		+= SynthGraphEditorFactory.NODE_HEADER_HEIGHT;
+			contentRect.height	-= SynthGraphEditorFactory.NODE_HEADER_HEIGHT;
+			contentRect.x		+= SynthGraphEditorFactory.NODE_PADDING;
+			contentRect.width	-= SynthGraphEditorFactory.NODE_PADDING * 2.0f;
+			
+			GUILayout.BeginArea( contentRect );		
 			DrawNode();
 			GUILayout.EndArea();
+			
+			if ( m_dataNode != null )
+			{
+				if ( ShouldDrawInputHandles() )
+				{
+					Rect inputRect = m_rect;
+					inputRect.y -= SynthGraphEditorFactory.NODE_CONNECTOR_SIZE;
+					int conn = SynthGraphEditorFactory.ConnectorHorizontalGroup( inputRect, m_dataNode.GetSourceCount() );
+					
+					if ( conn > SynthGraphEditorFactory.BUTTON_GROUP_NO_INPUT )
+					{
+						RaiseNodeConnectorSelected( this, conn, NodeConnectorType.DATA_IN );
+					}
+				}
+				
+				if ( ShouldDrawOutputHandles() )
+				{
+					Rect outputRect = m_rect;
+					outputRect.y = m_rect.y + m_rect.height;
+					int conn = SynthGraphEditorFactory.ConnectorHorizontalGroup( outputRect, 1 );
+					
+					if ( conn > SynthGraphEditorFactory.BUTTON_GROUP_NO_INPUT )
+					{
+						RaiseNodeConnectorSelected( this, conn, NodeConnectorType.DATA_OUT );
+					}
+				}
+			}
+			
 			ProcessInput();
 		}
 		
+		public void Select()
+		{
+			if ( OnNodeSelected != null )
+			{
+				OnNodeSelected( this );
+			}
+		}
+
 		protected virtual void DrawNode()
 		{
-		
+
+		}
+
+		protected virtual bool ShouldDrawInputHandles()
+		{
+			return true;
 		}
 		
+		protected virtual bool ShouldDrawOutputHandles()
+		{
+			return true;
+		}
+		
+		protected virtual bool ShouldDrawBindingHandles()
+		{
+			return true;
+		}
+
 		private void ProcessInput()
 		{
 			Event e = Event.current;
 		
 			switch( e.type )
 			{
+				case EventType.ContextClick:
+					if ( m_rect.Contains ( e.mousePosition ) )
+					{
+						Select();
+						e.Use();
+					}
+				break;
+			
 				case EventType.MouseDown:
 					if ( m_rect.Contains ( e.mousePosition ) )
 					{
@@ -102,6 +236,14 @@ namespace UniSynth2.Editor
 				break;
 			}
 		
+		}
+		
+		private static void RaiseNodeConnectorSelected( NodeGUIBase node, int connectorIndex, NodeConnectorType connectorType )
+		{
+			if ( OnNodeConnectorSelected != null )
+			{
+				OnNodeConnectorSelected( node, connectorIndex, connectorType );
+			}
 		}
 	}
 }
