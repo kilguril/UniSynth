@@ -60,6 +60,18 @@ namespace UniSynth2.Editor
 			{
 				return new NodeGUIOutput( node );
 			}
+			else if ( t == typeof( SynthNodeGeneratorNoise ) )
+			{
+				return new NodeGUINoise( node );
+			}
+			else if ( t == typeof( SynthNodeTime ) )
+			{
+				return new NodeGUITime( node );
+			}
+			else if ( t == typeof( SynthNodeMapper ) )
+			{
+				return new NodeGUIMapper( node );
+			}
 			else
 			{
 				return new NodeGUIBase( node );
@@ -87,6 +99,12 @@ namespace UniSynth2.Editor
 			return rval;
 		}
 		
+		public static void FloatFieldOccupiedWithLabel( string label )
+		{
+			EditorGUILayout.PrefixLabel( label );
+			EditorGUILayout.LabelField(" --INPUT-- " );
+		}
+		
 		public static float FloatFieldWithLabel( float value, string label )
 		{	
 			EditorGUILayout.PrefixLabel( label );
@@ -112,26 +130,17 @@ namespace UniSynth2.Editor
 			GUILayout.EndArea();		
 		}
 		
-		public static int ConnectorHorizontalGroup( Rect controlRect, int count )
+		public static int ConnectorGroup( Rect[] controls )
 		{
 			int rval = BUTTON_GROUP_NO_INPUT;
 			
-			GUILayout.BeginArea( controlRect );
-			GUILayout.BeginHorizontal();
-			GUILayout.FlexibleSpace();
-			
-			for ( int i = 0; i < count; i++ )
+			for ( int i = 0; i < controls.Length; i++ )
 			{
-				if ( GUILayout.Button("", GUILayout.Width( NODE_CONNECTOR_SIZE ), GUILayout.Height( NODE_CONNECTOR_SIZE ) ) )
+				if ( GUI.Button( controls[ i ], "" ) )
 				{
 					rval = i;
 				}
-				
-				GUILayout.FlexibleSpace();
 			}
-			
-			GUILayout.EndHorizontal();
-			GUILayout.EndArea();
 			
 			return rval;
 		}

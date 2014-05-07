@@ -10,15 +10,14 @@ namespace UniSynth2
 			m_sourceNodes = new ISynthGraphNode[2];
 		}
 		
-		public override void Process (float[] data, SoundClipState state)
+		public override float Process (SoundClipState state)
 		{
-			// IMPLEMENT ME
-			for ( int i = 0; i < data.Length; i++ )
+			if ( state.m_index % 2 == 0 )
 			{
-				data[ i ] = 0;
+				return m_sourceNodes[ 0 ].Process( state );
 			}
 			
-			m_sourceNodes[ 0 ].Process( data, state );
+			return m_sourceNodes[ 1 ].Process( state );
 		}
 	}
 }

@@ -12,9 +12,7 @@ namespace UniSynth2.Editor
 		public enum NodeConnectorType
 		{
 			DATA_IN,
-			DATA_OUT,
-			BINDING_IN,
-			BINDING_OUT
+			DATA_OUT
 		}
 		
 		public ISynthGraphNode DataNode
@@ -77,11 +75,23 @@ namespace UniSynth2.Editor
 		
 		public Vector2 GetInputHandle( int index )
 		{
+			int primaryInputs = m_dataNode.GetSourceCount() - GetSecondaryInputCount();
+		
 			Vector2 output;			
-			float slotSize = ( m_rect.width / m_dataNode.GetSourceCount() );
 			
-			output.x = m_rect.x + ( slotSize * index ) + ( slotSize / 2.0f );
-			output.y = m_rect.y - ( SynthGraphEditorFactory.SPLIT_VIEW_HANDLE_SIZE / 2.0f );
+			if ( index < primaryInputs )
+			{
+				float slotSize = ( ( m_rect.width ) / primaryInputs );
+				output.x = m_rect.x + ( slotSize * index ) + ( slotSize / 2.0f );
+				output.y = m_rect.y - ( SynthGraphEditorFactory.NODE_HEADER_HEIGHT / 2.0f );
+			}
+			else
+			{
+				int secondaryIndex = index - primaryInputs;
+			
+				output.x = m_rect.x - SynthGraphEditorFactory.NODE_CONNECTOR_SIZE;
+				output.y = m_rect.y + SynthGraphEditorFactory.NODE_HEADER_HEIGHT + SynthGraphEditorFactory.NODE_HEADER_HEIGHT + ( SynthGraphEditorFactory.NODE_CONNECTOR_SIZE / 2.0f ) + ( SynthGraphEditorFactory.NODE_LINE_HEIGHT * 2.0f * secondaryIndex );
+			}
 			
 			return output;
 		}
@@ -139,12 +149,25 @@ namespace UniSynth2.Editor
 			GUILayout.EndArea();
 			
 			if ( m_dataNode != null )
-			{
+			{				
+				int secondaryInputs = GetSecondaryInputCount();
+				int primaryInputs   = m_dataNode.GetSourceCount() - secondaryInputs;
+			
 				if ( ShouldDrawInputHandles() )
 				{
-					Rect inputRect = m_rect;
-					inputRect.y -= SynthGraphEditorFactory.NODE_CONNECTOR_SIZE;
-					int conn = SynthGraphEditorFactory.ConnectorHorizontalGroup( inputRect, m_dataNode.GetSourceCount() );
+					Rect[] controls = new Rect[ primaryInputs ];
+				
+					for ( int i = 0; i < controls.Length; i++ )
+					{
+						Vector2 handle = GetInputHandle( i );
+						
+						controls[ i ].x = handle.x - SynthGraphEditorFactory.NODE_CONNECTOR_SIZE / 2.0f;
+						controls[ i ].y = handle.y - SynthGraphEditorFactory.NODE_CONNECTOR_SIZE / 2.0f;
+						controls[ i ].width  = SynthGraphEditorFactory.NODE_CONNECTOR_SIZE;
+						controls[ i ].height = SynthGraphEditorFactory.NODE_CONNECTOR_SIZE;
+					}
+			
+					int conn = SynthGraphEditorFactory.ConnectorGroup( controls );
 					
 					if ( conn > SynthGraphEditorFactory.BUTTON_GROUP_NO_INPUT )
 					{
@@ -154,13 +177,42 @@ namespace UniSynth2.Editor
 				
 				if ( ShouldDrawOutputHandles() )
 				{
-					Rect outputRect = m_rect;
-					outputRect.y = m_rect.y + m_rect.height;
-					int conn = SynthGraphEditorFactory.ConnectorHorizontalGroup( outputRect, 1 );
+					Rect[] controls = new Rect[ 1 ];
+					
+					Vector2 handle = GetOutputHandle();
+					
+					controls[ 0 ].x = handle.x - SynthGraphEditorFactory.NODE_CONNECTOR_SIZE / 2.0f;
+					controls[ 0 ].y = handle.y - SynthGraphEditorFactory.NODE_CONNECTOR_SIZE / 2.0f;
+					controls[ 0 ].width  = SynthGraphEditorFactory.NODE_CONNECTOR_SIZE;
+					controls[ 0 ].height = SynthGraphEditorFactory.NODE_CONNECTOR_SIZE;
+				
+					int conn = SynthGraphEditorFactory.ConnectorGroup( controls );
 					
 					if ( conn > SynthGraphEditorFactory.BUTTON_GROUP_NO_INPUT )
 					{
 						RaiseNodeConnectorSelected( this, conn, NodeConnectorType.DATA_OUT );
+					}
+				}
+				
+				if ( secondaryInputs > 0 )
+				{
+					Rect[] controls = new Rect[ secondaryInputs ];	
+									
+					for ( int i = 0; i < controls.Length; i++ )
+					{
+						Vector2 handle = GetInputHandle( i + primaryInputs );
+						
+						controls[ i ].x = handle.x - SynthGraphEditorFactory.NODE_CONNECTOR_SIZE / 2.0f;
+						controls[ i ].y = handle.y - SynthGraphEditorFactory.NODE_CONNECTOR_SIZE / 2.0f;
+						controls[ i ].width  = SynthGraphEditorFactory.NODE_CONNECTOR_SIZE;
+						controls[ i ].height = SynthGraphEditorFactory.NODE_CONNECTOR_SIZE;
+					}
+					
+					int secondary = SynthGraphEditorFactory.ConnectorGroup( controls );
+					
+					if ( secondary > SynthGraphEditorFactory.BUTTON_GROUP_NO_INPUT )
+					{
+						RaiseNodeConnectorSelected( this, secondary + primaryInputs, NodeConnectorType.DATA_IN );
 					}
 				}
 			}
@@ -190,10 +242,10 @@ namespace UniSynth2.Editor
 		{
 			return true;
 		}
-		
-		protected virtual bool ShouldDrawBindingHandles()
+
+		protected virtual int GetSecondaryInputCount()
 		{
-			return true;
+			return 0;
 		}
 
 		private void ProcessInput()

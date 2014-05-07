@@ -45,7 +45,10 @@ namespace UniSynth2.Editor.Windows
 			state.m_sampleLength = clip.SampleLength;
 			state.m_index		 = 0;
 			
-			m_rootNode.Process( buffer, state );
+			for ( int i = 0; i < buffer.Length; i++, state.m_index++ )
+			{
+				buffer[ i ] = m_rootNode.Process( state );
+			}
 			
 			return buffer;
 		}

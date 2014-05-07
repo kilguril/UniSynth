@@ -99,10 +99,11 @@ namespace UniSynth2
 				return;
 			}
 		
-			m_clipState.m_index = m_index;
-			m_outputNode.Process( data, m_clipState );
-		
-			m_index += data.Length;
+			for ( int i = 0; i < data.Length; i++, m_index++ )
+			{
+				m_clipState.m_index = m_index; 
+				data[ i ] = m_outputNode.Process( m_clipState );
+			}
 		}
 		
 		private void OnPositionSet( int position )

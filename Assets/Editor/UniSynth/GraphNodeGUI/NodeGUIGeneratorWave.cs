@@ -26,10 +26,28 @@ namespace UniSynth2.Editor
 		}
 		
 		protected override void DrawNode()
-		{
+		{			
+			ISynthGraphNode[] sources = m_generatorNode.GetSourceNodes();
+			
+			if ( sources.Length > 0 && sources[ 0 ] != null )
+			{
+				SynthGraphEditorFactory.FloatFieldOccupiedWithLabel( "Frequency" );
+			}
+			else
+			{
+				m_generatorNode.m_frequency = SynthGraphEditorFactory.FloatFieldWithLabel( m_generatorNode.m_frequency , "Frequency" );
+			}
+			
+			if ( sources.Length > 1 && sources[ 1 ] != null )
+			{
+				SynthGraphEditorFactory.FloatFieldOccupiedWithLabel( "Gain" );
+			}
+			else
+			{
+				m_generatorNode.m_gain 		= SynthGraphEditorFactory.FloatFieldWithLabel( m_generatorNode.m_gain, "Gain" );			
+			}
+			
 			m_generatorNode.m_waveShape = (SynthNodeGeneratorWave.WaveShape)SynthGraphEditorFactory.EnumFieldWithLabel ( m_generatorNode.m_waveShape, "Shape" );
-			m_generatorNode.m_frequency = SynthGraphEditorFactory.FloatFieldWithLabel( m_generatorNode.m_frequency , "Frequency" );
-			m_generatorNode.m_gain 		= SynthGraphEditorFactory.FloatFieldWithLabel( m_generatorNode.m_gain, "Gain" );			
 		}
 		
 		protected override bool ShouldDrawInputHandles ()
@@ -37,5 +55,9 @@ namespace UniSynth2.Editor
 			return false;
 		}
 		
+		protected override int GetSecondaryInputCount ()
+		{
+			return 2;
+		}
 	}
 }

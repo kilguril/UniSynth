@@ -10,6 +10,6 @@ namespace UniSynth2
 		
 		void SetSourceNode (ISynthGraphNode node, int index);
 		
-		void Process (float[] data, SoundClipState state);
+		float Process (SoundClipState state);
 	}
 }

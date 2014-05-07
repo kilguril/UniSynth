@@ -209,6 +209,18 @@ namespace UniSynth2.Editor
 				case SynthGraphEditorToolboxWindow.ToolReturnValue.ADD_OPERATION_NODE:
 					m_graphWindow.AddNode( new SynthNodeOperation() );
 				break;
+				
+				case SynthGraphEditorToolboxWindow.ToolReturnValue.ADD_TIME_NODE:
+					m_graphWindow.AddNode( new SynthNodeTime() );
+				break;
+				
+				case SynthGraphEditorToolboxWindow.ToolReturnValue.ADD_NOISE_NODE:
+					m_graphWindow.AddNode( new SynthNodeGeneratorNoise() );
+				break;
+				
+				case SynthGraphEditorToolboxWindow.ToolReturnValue.ADD_MAPPER_NODE:
+					m_graphWindow.AddNode( new SynthNodeMapper() );
+				break;
 			}
 		}
 		

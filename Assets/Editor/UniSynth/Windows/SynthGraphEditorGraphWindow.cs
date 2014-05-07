@@ -198,7 +198,10 @@ namespace UniSynth2.Editor.Windows
 			}
 			else
 			{
-				m_graphCache.Add( node, SynthGraphEditorFactory.GetGUIControl( node ) );
+				if ( !m_graphCache.ContainsKey( node ) )
+				{
+					m_graphCache.Add( node, SynthGraphEditorFactory.GetGUIControl( node ) );
+				}
 			}
 			
 			ISynthGraphNode[] inputs = node.GetSourceNodes();
